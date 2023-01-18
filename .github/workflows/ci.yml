@@ -1,0 +1,53 @@
+name: CI
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 16 * * 1"
+permissions: write-all
+
+jobs:
+  bin:
+    name: Get Binary
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@main
+
+    - name: Get lastest 7z
+      run: |
+          curl -fsSL "http://sourceforge.net/projects/sevenzip/files/latest/download" -o "./7z-Setup.exe" -O
+
+    - name: Extract 7z
+      run: |
+          7z x ./7z-Setup.exe
+
+    - name: Upload 7z.exe to artifacts
+      uses: actions/upload-artifact@main
+      with:
+        name: 7z
+        path: "./7z.exe"
+
+  release:
+    name: Release
+    needs: [bin]
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@main
+
+    - name: Get 7z.exe from artifacts
+      uses: actions/download-artifact@main
+      with:
+        name: 7z
+
+    - name: Get 7z version
+      uses: mathiasvr/command-output@main
+      id: version
+      with:
+        run: ./7z.exe | Select-String 7-Zip | ForEach-Object {(-split $_)[1] -join ' '}
+        shell: powershell
+
+    - name: Upload 7z to release
+      uses: svenstaro/upload-release-action@master
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: 7z.exe
+        tag: ${{ steps.version.outputs.stdout }}
