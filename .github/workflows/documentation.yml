@@ -1,0 +1,34 @@
+name: Documentation
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+permissions: write-all
+
+jobs:
+  update:
+     name: Update Documentation
+     runs-on: ubuntu-latest
+     if: ${{ github.event.workflow_run.conclusion == 'success' }}
+     steps:
+     - name: Checkout source code
+       uses: actions/checkout@main
+
+     - name: Download LICENSE
+       run: |
+           curl -fsSL "https://www.7-zip.org/license.txt" -o "./LICENSE" -O
+
+     - name: Update LICENSE.md
+       run: |
+           [ -e "./LICENSE.md" ] || touch "./LICENSE.md"
+           sed -i '/<!-- LICENSE:START -->/,/<!-- LICENSE:END -->/d' LICENSE.md
+           echo '<!-- LICENSE:START -->' >> LICENSE.md
+           cat ./LICENSE >> LICENSE.md
+           echo '<!-- LICENSE:END -->' >> LICENSE.md
+
+     - name: Push
+       uses: actions-x/commit@master
+       with:
+          name: GitHub Actions
+          files: ./LICENSE.md
+          message: 'Update documentation'
