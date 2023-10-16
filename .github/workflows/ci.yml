@@ -24,7 +24,9 @@ jobs:
       uses: actions/upload-artifact@main
       with:
         name: 7z
-        path: "./7z.exe"
+        path: |
+          "./7z.exe"
+          "./7z.dll"
 
   release:
     name: Release
@@ -49,5 +51,5 @@ jobs:
       uses: svenstaro/upload-release-action@master
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: 7z.exe
+        file: 7z.*
         tag: ${{ steps.version.outputs.stdout }}
